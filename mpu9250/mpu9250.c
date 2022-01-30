@@ -519,7 +519,7 @@ static ssize_t device_read(struct file *filep,
 									axisTotalBytes);
 		returnedBytesToUser += (axisTotalBytes - notCopiedBytes);
 		*offset += axisTotalBytes - notCopiedBytes;
-		/*
+		//*
 		pr_info("read|(axis)copied bytes=%d\n", axisTotalBytes - notCopiedBytes);
 		pr_info("data|   X   |   Y   |   Z\n"
 							"acc |%6hd |%6hd | %6hd\n"
