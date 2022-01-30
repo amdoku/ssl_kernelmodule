@@ -149,9 +149,9 @@ module_param(ACCL_DIV, int, 0444);
 static int MAGN_MUL = 0x3f19999a; // 0.6f in hex
 module_param(MAGN_MUL, int, 0444);
 
-static short BUMP_HI = 26000;
+static short BUMP_HI = 14000;
 module_param(BUMP_HI, short, 0444);
-static short BUMP_LO = -26000;
+static short BUMP_LO = -14000;
 module_param(BUMP_LO, short, 0444);
 
 struct mpu9250_device_t {
@@ -339,11 +339,12 @@ static loff_t device_llseek(struct file * file, loff_t offset, int origin) {
 static int device_probe(struct platform_device *pdev) {
 	static const uint8_t AK8963_I2C_ADDRESS = 0x0C;
 	struct mpu9250_device_t * device;
+	mpu9250_data_t calibrationData;
 	struct resource * io;
 	int bump_interrupt;
 	int retVal;
-	short bump_upper = max(BUMP_HI, BUMP_LO);
-	short bump_lower = min(BUMP_HI, BUMP_LO);
+	short const bump_upper = max(BUMP_HI, BUMP_LO);
+	short const bump_lower = min(BUMP_HI, BUMP_LO);
 
 	pr_info("mpu9250_probe hit\n");
 
@@ -419,10 +420,12 @@ static int device_probe(struct platform_device *pdev) {
 	}
 	device->irq = bump_interrupt;
 
+	memcpy_fromio(&calibrationData, device->regs, CHAR_AMOUNT_BUFFER);
+
 	// set thresholds before registering the interrupt
-	iowrite32(bump_upper << 16 | bump_lower, device->regs + 16);
-	iowrite32(bump_upper << 16 | bump_lower, device->regs + 20);
-	iowrite32(bump_upper << 16 | bump_lower, device->regs + 28);
+	iowrite32(((bump_upper + calibrationData.accel.x) & 0xFFFF) << 16 | ((bump_lower + calibrationData.accel.x) & 0xFFFF), device->regs + 16); // X
+	iowrite32(((bump_upper + calibrationData.accel.y) & 0xFFFF) << 16 | ((bump_lower + calibrationData.accel.y) & 0xFFFF), device->regs + 20); // Y
+	iowrite32(((bump_upper + calibrationData.accel.z) & 0xFFFF) << 16 | ((bump_lower + calibrationData.accel.z) & 0xFFFF), device->regs + 28); // Z
 
 	if (devm_request_threaded_irq(device->misc.this_device,
 			bump_interrupt,
@@ -496,10 +499,8 @@ static ssize_t device_read(struct file *filep,
 		length = totalBytesToUser - *offset;
 	}
 
-	/*
-	pr_info("read|device->regs=%p,length=%d,offset=%llu,seek=%llu\n",
+	pr_debug("read|device->regs=%p,length=%d,offset=%llu,seek=%llu\n",
 									device->regs, length, *offset, filep->f_pos);
-	//*/
 
 	if (length >= sizeof(ts)) {
 		ts = ktime_get_real();
@@ -508,7 +509,7 @@ static ssize_t device_read(struct file *filep,
 									sizeof(ts));
 		returnedBytesToUser += (sizeof(ts) - notCopiedBytes);
 		*offset += (sizeof(ts) - notCopiedBytes);
-		//pr_info("read|(time)copied bytes=%d\n", sizeof(ts) - notCopiedBytes);
+		pr_debug("read|(time)copied bytes=%d\n", sizeof(ts) - notCopiedBytes);
 	}
 
 	// if (dont write beyond buffer)
@@ -519,19 +520,17 @@ static ssize_t device_read(struct file *filep,
 									axisTotalBytes);
 		returnedBytesToUser += (axisTotalBytes - notCopiedBytes);
 		*offset += axisTotalBytes - notCopiedBytes;
-		//*
-		pr_info("read|(axis)copied bytes=%d\n", axisTotalBytes - notCopiedBytes);
-		pr_info("data|   X   |   Y   |   Z\n"
+		pr_debug("read|(axis)copied bytes=%d\n", axisTotalBytes - notCopiedBytes);
+		pr_debug("data|   X   |   Y   |   Z\n"
 							"acc |%6hd |%6hd | %6hd\n"
 							"gyro|%6hd |%6hd | %6hd\n"
 							"magn|%6hd |%6hd | %6hd\n",
 							device->data.accel.x, device->data.accel.y, device->data.accel.z,
 							device->data.gyro.x, device->data.gyro.y, device->data.gyro.z,
 							device->data.mag.x, device->data.mag.y, device->data.mag.z);
-		//*/
 	}
 
-	//pr_info("read|returned length=%lld/%u", *offset, totalBytesToUser);
+	pr_debug("read|returned length=%lld/%u", *offset, totalBytesToUser);
 
 	return returnedBytesToUser;
 }
