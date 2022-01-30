@@ -1,0 +1,2 @@
+CompileFlags:
+  Remove: [-mapcs, -mno-sched-prolog, -fno-ipa-sra, -mno-thumb-interwork, -fno-var-tracking-assignments, -fconserve-stack]

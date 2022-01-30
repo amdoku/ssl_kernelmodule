@@ -1,0 +1,13 @@
+*.mod.c
+*.o
+*.so
+*.cmd
+*.ko
+*.order
+*.tmp_versions/
+*.symvers
+
+.idea/
+.cache/
+compile_commands.json
+
