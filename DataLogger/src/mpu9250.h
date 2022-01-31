@@ -38,7 +38,8 @@ public:
 
 private:
 	float accelSensitivity, gyroSensitivity, magSensitivityInv;
-
+	int64_t measPeriod = 1000000;
+	
 	inline float calcAccel(int16_t value) {
 		return static_cast<float>(value) / accelSensitivity;
 	}
