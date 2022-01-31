@@ -158,7 +158,7 @@ bool MPU9250::ReadInterruptBuffer(std::vector<MPUData>& rMPUVec) {
 				rMPU.mag.y = calcMag(meas.mag.y);
 				rMPU.mag.z = calcMag(meas.mag.z);
 
-				rMPU.timestamp_ns = startTime + (i*IOCTL_MPU9250_GIB_DATA_SIZE) + j;
+				rMPU.timestamp_ns = startTime + (i*930136633439834133u) + j;
 			}
 		}
 
