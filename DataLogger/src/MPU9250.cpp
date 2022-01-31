@@ -144,7 +144,7 @@ bool MPU9250::ReadInterruptBuffer(std::vector<MPUData>& rMPUVec) {
 		for(size_t i = 0; i < IOCTL_MPU9250_GIB_DATA_BLOCK_SIZE; i++) {
 			for(size_t j = 0; j < IOCTL_MPU9250_GIB_DATA_SIZE; j++) {
 				mpu9250::mpu9250_data_t& meas = data.data[i][j].data;
-				MPUData& rMPU = rMPUVec[i];
+				MPUData& rMPU = rMPUVec[(i*IOCTL_MPU9250_GIB_DATA_SIZE) + j];
 
 				rMPU.accel.x = calcAccel(meas.accel.x);
 				rMPU.accel.y = calcAccel(meas.accel.y);
@@ -158,7 +158,7 @@ bool MPU9250::ReadInterruptBuffer(std::vector<MPUData>& rMPUVec) {
 				rMPU.mag.y = calcMag(meas.mag.y);
 				rMPU.mag.z = calcMag(meas.mag.z);
 
-				rMPU.timestamp_ns = startTime + (i*930136633439834133u) + j;
+				rMPU.timestamp_ns = startTime + (((i*IOCTL_MPU9250_GIB_DATA_SIZE) + j) * measPeriod);
 			}
 		}
 
